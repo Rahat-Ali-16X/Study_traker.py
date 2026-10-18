@@ -70,3 +70,12 @@ nav button span{font-size:20px;line-height:1.1}nav button.on{color:var(--c1);tex
 .adj{display:flex;flex-direction:column;gap:6px}.adj button{width:36px;height:32px;border:1px solid var(--line);color:var(--c1);font-size:16px}.adj button:active{background:rgba(0,240,255,.2)}
 .hm,.hl{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}.hl{text-align:center;font:10px 'Share Tech Mono',monospace;color:var(--mu);margin-bottom:6px}
 .hm i{aspect-ratio:1;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.05)}.hm .h1{background:rgba(0,240,255,.25)}.hm .h2{background:rgba(0,240,255,.55);box-shadow:0 0 6px rgba(0,240,255,.4)}.hm .h3{background:var(--c3);box-shadow:0 0 10px var(--c3)}.hm .td{outline:1px solid var(--c2);outline-offset:1px}
+/* ADD THIS AT THE VERY BOTTOM of your existing style.css */
+.er{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.er input{margin:0;flex:1;min-width:0}
+.er .ic{flex:0 0 52px;text-align:center}
+.er .x{flex:0 0 auto;font-size:16px}
+input.cl{flex:0 0 44px;width:44px;height:40px;padding:2px;cursor:pointer}
+.mod>input,.mod>select{margin-bottom:8px}
+a.pl{color:inherit;text-decoration:none}
+.btn:disabled{opacity:.3;pointer-events:none}
