@@ -65,4 +65,9 @@ nav button span{font-size:20px;line-height:1.1}nav button.on{color:var(--c1);tex
 #boot{position:fixed;inset:0;background:var(--bg);z-index:10;display:flex;align-items:center;justify-content:center;font:13px/1.9 'Share Tech Mono',monospace;color:var(--c1);animation:out .6s 1.2s forwards}@keyframes out{to{opacity:0;visibility:hidden}}
 #boot b{display:block;font:900 20px Orbitron,sans-serif;letter-spacing:4px;margin-bottom:8px;text-shadow:0 0 18px var(--c1)}
 @media(prefers-reduced-motion:reduce){*{animation-duration:.01s!important;transition:none!important}}
-                     
+
+.dg{display:flex;align-items:center;gap:14px}.dg svg{width:84px;flex-shrink:0}.dg svg circle{fill:none;stroke-width:9;stroke-linecap:round;filter:drop-shadow(0 0 5px currentColor)}.dg svg .tr2{stroke:rgba(255,255,255,.08);filter:none}.dg>div:nth-child(2){flex:1}.dg h3{margin-bottom:4px}.dg b{font:20px 'Share Tech Mono',monospace;color:var(--c1)}.dg p{font-size:13px;line-height:1.25}
+.adj{display:flex;flex-direction:column;gap:6px}.adj button{width:36px;height:32px;border:1px solid var(--line);color:var(--c1);font-size:16px}.adj button:active{background:rgba(0,240,255,.2)}
+.hm,.hl{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}.hl{text-align:center;font:10px 'Share Tech Mono',monospace;color:var(--mu);margin-bottom:6px}
+.hm i{aspect-ratio:1;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.05)}.hm .h1{background:rgba(0,240,255,.25)}.hm .h2{background:rgba(0,240,255,.55);box-shadow:0 0 6px rgba(0,240,255,.4)}.hm .h3{background:var(--c3);box-shadow:0 0 10px var(--c3)}.hm .td{outline:1px solid var(--c2);outline-offset:1px}
+  
