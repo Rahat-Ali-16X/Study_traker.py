@@ -65,3 +65,4 @@ nav button span{font-size:20px;line-height:1.1}nav button.on{color:var(--c1);tex
 #boot{position:fixed;inset:0;background:var(--bg);z-index:10;display:flex;align-items:center;justify-content:center;font:13px/1.9 'Share Tech Mono',monospace;color:var(--c1);animation:out .6s 1.2s forwards}@keyframes out{to{opacity:0;visibility:hidden}}
 #boot b{display:block;font:900 20px Orbitron,sans-serif;letter-spacing:4px;margin-bottom:8px;text-shadow:0 0 18px var(--c1)}
 @media(prefers-reduced-motion:reduce){*{animation-duration:.01s!important;transition:none!important}}
+                     
