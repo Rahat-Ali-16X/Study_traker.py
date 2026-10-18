@@ -1,101 +1,394 @@
-const $=s=>document.querySelector(s),p2=n=>String(n).padStart(2,'0'),fmt=s=>p2(s/3600|0)+':'+p2(s%3600/60|0)+':'+p2(s%60);
-const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const dk=d=>d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate());
-const SUBJ={Python:'#00ff9d','AI/ML':'#b66dff',Maths:'#ffb020',Physics:'#00d9ff',English:'#ff4d8d',Other:'#8aa0b8'};
-const QUOTES=[['The expert in anything was once a beginner.','Helen Hayes'],['Learning never exhausts the mind.','Leonardo da Vinci'],['The beautiful thing about learning is that no one can take it away from you.','B.B. King'],['An investment in knowledge pays the best interest.','Benjamin Franklin'],['Education is the most powerful weapon you can use to change the world.','Nelson Mandela'],['The more that you read, the more things you will know.','Dr. Seuss'],['Success is the sum of small efforts repeated day in and day out.','Robert Collier'],['Believe you can and you’re halfway there.','Theodore Roosevelt']];
-const PLAN=[['Week 1–2','Python Basics','#00ff9d','🐍',['Variables & Data Types','If/Else Conditions','Loops (for, while)','Functions & Modules']],['Week 3–4','Python Intermediate','#00d9ff','⚙️',['Lists, Tuples, Dicts','File Handling','OOP Concepts','Error Handling']],['Week 5–6','AI Foundations','#b66dff','🤖',['What is AI/ML?','NumPy & Pandas Basics','Data Visualization','Intro to scikit-learn']],['Week 7–8','Mini Projects','#ff5a36','🚀',['Simple Calculator','Student Grade Tracker','Basic Chatbot','ML Digit Recognizer']]];
-const RES=[['Python Docs','python.org','🐍'],['CS50P (Harvard)','cs50.harvard.edu','🎓'],['Kaggle Learn','kaggle.com/learn','🤖'],['W3Schools Python','w3schools.com','📖']];
-const RANKS=['CADET','PILOT','NAVIGATOR','COMMANDER','ADMIRAL'];
-const KEY='forge_study_v2';
-const def=()=>({v:2,nid:3,goals:[{id:1,text:'Complete Python Chapter 3',done:false,subject:'Python'},{id:2,text:'Watch ML intro video',done:false,subject:'AI/ML'}],sessions:[],plan:{},timer:{subject:'Python',target:25,base:0,start:null}});
-function load(){try{const j=JSON.parse(localStorage.getItem(KEY));if(j&&j.v===2)return j}catch(e){}return def()}
-let S=load(),tab='home',open=null,adding=false,wipe=false;
-const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
-const Q=QUOTES[Math.random()*QUOTES.length|0];
+import { useState, useEffect, useRef } from "react";
 
-/* ── CORE LOGIC ── */
-// Elapsed time comes from timestamps, not from counting interval ticks, so it stays exact when the tab sleeps.
-const el=()=>{const T=S.timer;return Math.floor(T.base+(T.start?(Date.now()-T.start)/1000:0))};
-const logged=(day)=>S.sessions.filter(s=>!day||s.day===day).reduce((a,s)=>a+s.sec,0);
-function streak(){const d=new Set(S.sessions.map(s=>s.day)),x=new Date();let n=0;if(!d.has(dk(x)))x.setDate(x.getDate()-1);while(d.has(dk(x))){n++;x.setDate(x.getDate()-1)}return n}
-const xp=()=>Math.floor(logged()/60)+S.goals.filter(g=>g.done).length*15;
-let AC;
-function unlock(){try{AC=AC||new(window.AudioContext||window.webkitAudioContext)()}catch(e){}}
-function beep(){try{[660,880,1320].forEach((f,i)=>{const t=AC.currentTime+i*.18,o=AC.createOscillator(),g=AC.createGain();o.frequency.value=f;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.2,t+.02);g.gain.exponentialRampToValueAtTime(.0001,t+.16);o.connect(g).connect(AC.destination);o.start(t);o.stop(t+.2)});navigator.vibrate&&navigator.vibrate([200,100,200])}catch(e){}}
-function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(toast.h);toast.h=setTimeout(()=>t.classList.remove('show'),2400)}
-function toggle(){unlock();const T=S.timer;if(T.start){T.base=el();T.start=null}else T.start=Date.now();save();render()}
-function discard(){const T=S.timer;T.base=0;T.start=null;save();render();toast('SESSION DISCARDED')}
-function finish(auto){const T=S.timer,e=auto?T.target*60:Math.min(el(),T.target*60);
- if(e>=60){S.sessions.push({id:S.nid++,subject:T.subject,sec:e,day:dk(new Date())});toast(auto?'⚡ SESSION COMPLETE · +'+(e/60|0)+' XP':'LOGGED · '+fmt(e))}else toast('UNDER 1 MIN · NOT LOGGED');
- T.base=0;T.start=null;save();if(auto)beep();render()}
-const locked=()=>{const T=S.timer;if(T.start||el()>0){toast('LOCKED · FINISH OR DISCARD FIRST');return true}};
-function setT(m){if(locked()){render();return}m=Math.round(m);S.timer.target=m>=1?Math.min(m,180):25;save();render()}
-function tick(){const T=S.timer,tot=T.target*60,e=el();
- if(T.start&&e>=tot){finish(true);return}
- const m=$('#tm');if(m){const r=Math.max(tot-e,0);m.textContent=p2(r/60|0)+':'+p2(r%60);$('#pg').setAttribute('stroke-dashoffset',2*Math.PI*96*(1-Math.min(e/tot,1)));$('#st').textContent=T.start?'● CORE ACTIVE':e?'‖ PAUSED':'STANDBY';$('#sb').textContent='ELAPSED '+fmt(e)}
- $('#clk').textContent=p2(new Date().getHours())+':'+p2(new Date().getMinutes())}
+const QUOTES = [
+  { text: "The expert in anything was once a beginner.", author: "Helen Hayes" },
+  { text: "Learning never exhausts the mind.", author: "Leonardo da Vinci" },
+  { text: "The beautiful thing about learning is that no one can take it away from you.", author: "B.B. King" },
+  { text: "An investment in knowledge pays the best interest.", author: "Benjamin Franklin" },
+  { text: "Education is the most powerful weapon you can use to change the world.", author: "Nelson Mandela" },
+  { text: "The more that you read, the more things you will know.", author: "Dr. Seuss" },
+  { text: "Success is the sum of small efforts repeated day in and day out.", author: "Robert Collier" },
+  { text: "Believe you can and you're halfway there.", author: "Theodore Roosevelt" },
+];
 
-/* ── VIEWS ── */
-const mi=g=>`<div class="mi${g.done?' dn':''}"><button class="ck" data-a="tg" data-id="${g.id}" aria-label="Toggle">${g.done?'✓':''}</button><div><p>${esc(g.text)}</p><span class="tag" style="--c:${SUBJ[g.subject]||SUBJ.Other}">${esc(g.subject)}</span></div><button class="x" data-a="del" data-id="${g.id}" aria-label="Delete">✕</button></div>`;
-const V={
-home(){const h=new Date().getHours(),lv=Math.floor(xp()/100)+1,x=xp()%100,dn=S.goals.filter(g=>g.done).length;
-return `<div class="hd"><small>${h<12?'GOOD MORNING':h<17?'GOOD AFTERNOON':'GOOD EVENING'}, PILOT</small><h1>COMMAND<br>CENTER</h1><p class="mu">UP Board Class 10 · Python & AI</p></div>
-<div class="p q"><p>“${esc(Q[0])}”</p><b>— ${esc(Q[1])}</b></div>
-<div class="g3"><div class="p st" style="--k:var(--c3)"><b>${fmt(logged(dk(new Date())))}</b><small>TODAY</small></div><div class="p st" style="--k:#ffb020"><b>${streak()}d</b><small>STREAK</small></div><div class="p st" style="--k:var(--c2)"><b>${dn}/${S.goals.length}</b><small>MISSIONS</small></div></div>
-<div class="p"><div class="row"><span>LVL ${lv} · ${RANKS[Math.min((lv-1)/3|0,4)]}</span><span>${x}/100 XP</span></div><div class="bar"><i style="width:${x}%"></i></div></div>
-<div class="p"><h3>ACTIVE MISSIONS</h3>${S.goals.length?S.goals.slice(0,3).map(mi).join(''):'<p class="mu">No missions yet. Open the Missions tab.</p>'}${S.goals.length>3?`<p class="mu" style="margin-top:8px">+${S.goals.length-3} more in Missions →</p>`:''}</div>
-<button class="btn" data-a="tab" data-v="timer">ENGAGE FOCUS CORE ▶</button>`},
-timer(){const T=S.timer,C=2*Math.PI*96,col=SUBJ[T.subject],e=el(),lk=e>0||T.start;
-return `<div class="hd"><small>FOCUS CORE</small><h1>DEEP WORK</h1></div>
-<div class="chips">${Object.keys(SUBJ).slice(0,5).map(k=>`<button class="chip${k===T.subject?' on':''}" data-a="subj" data-v="${k}" style="--c:${SUBJ[k]}">${k}</button>`).join('')}</div>
-<div class="ring"><svg viewBox="0 0 240 240"><circle class="tk${T.start?' spin':''}" cx="120" cy="120" r="112"/><circle class="tr" cx="120" cy="120" r="96"/><circle class="in" cx="120" cy="120" r="80"/><circle id="pg" cx="120" cy="120" r="96" transform="rotate(-90 120 120)" stroke="${col}" style="color:${col}" stroke-dasharray="${C}" stroke-dashoffset="${C}"/></svg><div class="ct"><b id="tm" style="font-weight:400">--:--</b><span id="st"></span><em id="sb"></em></div></div>
-<div class="pre" style="${lk?'opacity:.45':''}">${[15,25,45,60].map(m=>`<button class="${T.target===m?'on':''}" data-a="pre" data-v="${m}">${m}m</button>`).join('')}<input id="cu" type="number" min="1" max="180" value="${T.target}"><span class="mu">min</span></div>
-<div class="ctl"><button class="rb" data-a="reset" aria-label="Discard">↺</button><button class="go${T.start?' on':''}" data-a="go" aria-label="Start or pause">${T.start?'❚❚':'▶'}</button><button class="rb" data-a="fin" aria-label="Finish and log">✓</button></div>
-${S.sessions.length?`<div class="p"><h3>RECENT LOGS</h3>${S.sessions.slice(-4).reverse().map(s=>`<div class="row" style="color:var(--tx)"><span style="color:${SUBJ[s.subject]}">● ${esc(s.subject)}</span><span>${fmt(s.sec)}</span><span class="mu">${s.day.slice(5)}</span></div>`).join('')}</div>`:''}`},
-goals(){const pe=S.goals.filter(g=>!g.done),dn=S.goals.filter(g=>g.done);
-return `<div class="hd"><small>${dn.length}/${S.goals.length} COMPLETE</small><h1>MISSIONS</h1></div>
-<div class="bar" style="margin-bottom:16px"><i style="width:${S.goals.length?dn.length/S.goals.length*100:0}%"></i></div>
-${adding?`<div class="p"><h3>NEW MISSION</h3><input id="ng" maxlength="80" placeholder="What do you want to achieve?"><select id="ns">${Object.keys(SUBJ).map(k=>`<option>${k}</option>`).join('')}</select><div class="g2" style="margin:0"><button class="btn" data-a="add">ADD</button><button class="btn ghost" data-a="cancel">CANCEL</button></div></div>`:`<button class="btn" data-a="new" style="margin-bottom:16px">＋ NEW MISSION</button>`}
-${pe.length?`<div class="p"><h3>PENDING</h3>${pe.map(mi).join('')}</div>`:''}${dn.length?`<div class="p"><h3>COMPLETED ✓</h3>${dn.map(mi).join('')}</div>`:''}${S.goals.length?'':'<p class="mu" style="text-align:center;padding:30px">No missions yet. Add your first one.</p>'}`},
-plan(){return `<div class="hd"><small>8-WEEK PYTHON & AI</small><h1>ROADMAP</h1></div>`+PLAN.map((m,i)=>{const n=m[4].filter((_,j)=>S.plan[i+'-'+j]).length,pc=n/4*100;
-return `<div class="p mod${open===i?' open':''}" style="--c:${m[2]}"><button data-a="mod" data-v="${i}"><span style="font-size:24px">${m[3]}</span><div style="flex:1"><small style="color:${m[2]};font:700 11px Orbitron;letter-spacing:1px">${m[0]}</small><p style="font-weight:700;font-size:17px">${m[1]}</p></div><span class="mu" style="font:12px 'Share Tech Mono'">${n}/4</span><span class="ar">›</span></button><div class="bar"><i style="width:${pc}%;background:${m[2]};box-shadow:0 0 8px ${m[2]}"></i></div>${open===i?`<div class="tasks">${m[4].map((t,j)=>`<button class="pl${S.plan[i+'-'+j]?' dn':''}" data-a="pt" data-v="${i}-${j}"><span class="ck">${S.plan[i+'-'+j]?'✓':''}</span><span>${t}</span></button>`).join('')}</div>`:''}</div>`}).join('')+
-`<div class="p"><h3>FREE RESOURCES</h3>${RES.map(r=>`<div class="pl"><span>${r[2]}</span><div><p>${r[0]}</p><span class="mu" style="font-size:12px">${r[1]}</span></div></div>`).join('')}</div>`},
-stats(){const sub={};S.sessions.forEach(s=>sub[s.subject]=(sub[s.subject]||0)+s.sec);const mx=Math.max(...Object.values(sub),1);
-const wk=[...Array(7)].map((_,i)=>{const d=new Date();d.setDate(d.getDate()-6+i);return{l:'SMTWTFS'[d.getDay()],m:Math.round(logged(dk(d))/60),t:i===6}}),wm=Math.max(...wk.map(w=>w.m),1);
-return `<div class="hd"><small>PERFORMANCE DATA</small><h1>TELEMETRY</h1></div>
-<div class="g2">${[['TOTAL TIME',fmt(logged()),'var(--c1)'],['DAY STREAK',streak()+' 🔥','#ffb020'],['SESSIONS',S.sessions.length,'var(--c3)'],['MISSIONS',S.goals.filter(g=>g.done).length+'/'+S.goals.length,'var(--c2)']].map(a=>`<div class="p st" style="--k:${a[2]}"><b style="font-size:19px">${a[1]}</b><small>${a[0]}</small></div>`).join('')}</div>
-<div class="p"><h3>LAST 7 DAYS · MIN</h3><div class="ch">${wk.map(w=>`<div class="${w.t?'t':''}"><span>${w.m||''}</span><i style="height:${w.m/wm*80}%"></i><span>${w.l}</span></div>`).join('')}</div></div>
-<div class="p"><h3>SUBJECT BREAKDOWN</h3>${Object.keys(sub).length?Object.entries(sub).map(([k,v])=>`<div class="sb" style="--c:${SUBJ[k]||SUBJ.Other}"><div class="row" style="color:var(--tx)"><span>${esc(k)}</span><span style="color:var(--c)">${fmt(v)}</span></div><div class="bar"><i style="width:${v/mx*100}%"></i></div></div>`).join(''):'<p class="mu">Complete a focus session to see your breakdown.</p>'}</div>
-<div class="p" style="text-align:center"><p style="font-size:26px">🚀</p><p style="font-weight:700">Keep going, future developer!</p><p class="mu" style="font-size:12px;letter-spacing:1px">CLASS 10 → IIT/NIT → DREAM JOB</p></div>
-<button class="btn ghost" data-a="wipe" style="${wipe?'color:var(--c2);border-color:var(--c2)':''}">${wipe?'TAP AGAIN TO WIPE ALL DATA':'RESET ALL DATA'}</button>`}};
+const LEARNING_PLAN = [
+  {
+    week: "Week 1–2",
+    topic: "Python Basics",
+    color: "#4CAF50",
+    tasks: ["Variables & Data Types", "If/Else Conditions", "Loops (for, while)", "Functions & Modules"],
+  },
+  {
+    week: "Week 3–4",
+    topic: "Python Intermediate",
+    color: "#2196F3",
+    tasks: ["Lists, Tuples, Dicts", "File Handling", "OOP Concepts", "Error Handling"],
+  },
+  {
+    week: "Week 5–6",
+    topic: "AI Foundations",
+    color: "#9C27B0",
+    tasks: ["What is AI/ML?", "NumPy & Pandas Basics", "Data Visualization", "Intro to scikit-learn"],
+  },
+  {
+    week: "Week 7–8",
+    topic: "Mini Projects",
+    color: "#FF5722",
+    tasks: ["Simple Calculator", "Student Grade Tracker", "Basic Chatbot", "ML Digit Recognizer"],
+  },
+];
 
-const NAV=[['home','⌂','HOME'],['timer','◔','FOCUS'],['goals','◎','MISSIONS'],['plan','⌬','ROADMAP'],['stats','▥','TELEMETRY']];
-function render(){$('#app').innerHTML='<div class="view">'+V[tab]()+'</div>';
- $('#nav').innerHTML=NAV.map(n=>`<button class="${n[0]===tab?'on':''}" data-a="tab" data-v="${n[0]}"><span>${n[1]}</span>${n[2]}</button>`).join('');
- if(tab==='goals'&&adding){const i=$('#ng');i&&i.focus()}tick()}
+const SUBJECTS = ["Python", "AI/ML", "Maths", "Physics", "English", "Other"];
 
-/* ── EVENTS ── */
-function addGoal(){const t=$('#ng').value.trim();if(!t){toast('ENTER A MISSION FIRST');return}S.goals.push({id:S.nid++,text:t,done:false,subject:$('#ns').value});adding=false;save();render()}
-document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a,v=b.dataset.v,id=+b.dataset.id,T=S.timer;
- if(a==='tab'){tab=v;adding=false;scrollTo(0,0);render();return}
- if(a==='tg'){const g=S.goals.find(x=>x.id===id);g.done=!g.done}
- else if(a==='del')S.goals=S.goals.filter(x=>x.id!==id);
- else if(a==='new'){adding=true}else if(a==='cancel'){adding=false}else if(a==='add'){addGoal();return}
- else if(a==='subj'){if(locked())return;T.subject=v}
- else if(a==='pre'){setT(+v);return}
- else if(a==='go'){toggle();return}else if(a==='reset'){discard();return}else if(a==='fin'){finish(false);return}
- else if(a==='mod')open=open===+v?null:+v;
- else if(a==='pt')S.plan[v]=!S.plan[v];
- else if(a==='wipe'){if(!wipe){wipe=true;render();setTimeout(()=>{if(wipe){wipe=false;tab==='stats'&&render()}},3000);return}wipe=false;S=def();toast('SYSTEM RESET')}
- save();render()});
-document.addEventListener('change',e=>{if(e.target.id==='cu')setT(parseInt(e.target.value))});
-document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='ng')addGoal()});
-document.addEventListener('visibilitychange',tick);
+export default function StudyTracker() {
+  const [tab, setTab] = useState("home");
+  const [goals, setGoals] = useState([
+    { id: 1, text: "Complete Python Chapter 3", done: false, subject: "Python" },
+    { id: 2, text: "Watch ML intro video", done: false, subject: "AI/ML" },
+  ]);
+  const [newGoal, setNewGoal] = useState("");
+  const [newGoalSubject, setNewGoalSubject] = useState("Python");
+  const [sessions, setSessions] = useState([]);
+  const [timer, setTimer] = useState({ running: false, seconds: 0, subject: "Python", mode: "study" });
+  const [customTime, setCustomTime] = useState(25);
+  const [quoteIdx] = useState(() => Math.floor(Math.random() * QUOTES.length));
+  const [showAddGoal, setShowAddGoal] = useState(false);
+  const [planExpanded, setPlanExpanded] = useState(null);
+  const [streak, setStreak] = useState(3);
+  const intervalRef = useRef(null);
 
-/* ── STARFIELD ── */
-const cv=$('#bg'),cx=cv.getContext('2d');let W,H,st=[];
-function rs(){W=cv.width=innerWidth;H=cv.height=innerHeight;st=Array.from({length:70},()=>({x:Math.random()*W,y:Math.random()*H,z:Math.random()*.8+.2}))}
-function fr(){cx.clearRect(0,0,W,H);for(const s of st){s.y+=s.z*.18;if(s.y>H)s.y=0;cx.fillStyle='rgba(160,230,255,'+s.z*.7+')';cx.fillRect(s.x,s.y,s.z*1.8,s.z*1.8)}if(!matchMedia('(prefers-reduced-motion:reduce)').matches)requestAnimationFrame(fr)}
-addEventListener('resize',rs);rs();fr();
-render();setInterval(tick,250);
+  useEffect(() => {
+    if (timer.running) {
+      intervalRef.current = setInterval(() => {
+        setTimer((t) => ({ ...t, seconds: t.seconds + 1 }));
+      }, 1000);
+    } else {
+      clearInterval(intervalRef.current);
+    }
+    return () => clearInterval(intervalRef.current);
+  }, [timer.running]);
 
+  const fmt = (s) => `${String(Math.floor(s / 3600)).padStart(2, "0")}:${String(Math.floor((s % 3600) / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
+
+  const startTimer = () => setTimer((t) => ({ ...t, running: true }));
+  const pauseTimer = () => setTimer((t) => ({ ...t, running: false }));
+  const resetTimer = () => {
+    clearInterval(intervalRef.current);
+    if (timer.seconds > 60) {
+      setSessions((s) => [...s, { subject: timer.subject, seconds: timer.seconds, date: new Date().toLocaleDateString() }]);
+    }
+    setTimer((t) => ({ ...t, running: false, seconds: 0 }));
+  };
+
+  const setPreset = (mins) => {
+    resetTimer();
+    setCustomTime(mins);
+  };
+
+  const totalStudied = sessions.reduce((a, b) => a + b.seconds, 0);
+  const todaySessions = sessions.filter((s) => s.date === new Date().toLocaleDateString());
+  const todayTime = todaySessions.reduce((a, b) => a + b.seconds, 0);
+  const completedGoals = goals.filter((g) => g.done).length;
+
+  const addGoal = () => {
+    if (!newGoal.trim()) return;
+    setGoals((g) => [...g, { id: Date.now(), text: newGoal, done: false, subject: newGoalSubject }]);
+    setNewGoal("");
+    setShowAddGoal(false);
+  };
+
+  const toggleGoal = (id) => setGoals((g) => g.map((x) => (x.id === id ? { ...x, done: !x.done } : x)));
+  const deleteGoal = (id) => setGoals((g) => g.filter((x) => x.id !== id));
+
+  const quote = QUOTES[quoteIdx];
+
+  const subjectColors = {
+    Python: "#4CAF50", "AI/ML": "#9C27B0", Maths: "#FF9800",
+    Physics: "#2196F3", English: "#F44336", Other: "#607D8B",
+  };
+
+  return (
+    <div style={{
+      minHeight: "100vh", background: "#0F1117", display: "flex",
+      justifyContent: "center", alignItems: "center",
+      fontFamily: "'Nunito', sans-serif",
+    }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=JetBrains+Mono:wght@500&display=swap');
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+        .ripple { position: relative; overflow: hidden; cursor: pointer; }
+        .ripple:active::after {
+          content: ''; position: absolute; inset: 0;
+          background: rgba(255,255,255,0.12); border-radius: inherit;
+          animation: rippleAnim 0.3s ease;
+        }
+        @keyframes rippleAnim { from { opacity: 1; } to { opacity: 0; } }
+        .tab-item { transition: all 0.2s; }
+        .tab-item:active { transform: scale(0.92); }
+        .goal-item { animation: slideIn 0.25s ease; }
+        @keyframes slideIn { from { transform: translateX(-16px); opacity: 0; } to { transform: none; opacity: 1; } }
+        .card { animation: fadeUp 0.3s ease; }
+        @keyframes fadeUp { from { transform: translateY(12px); opacity: 0; } to { transform: none; opacity: 1; } }
+        .timer-ring { transition: stroke-dashoffset 0.5s linear; }
+        .fab { transition: transform 0.2s, box-shadow 0.2s; }
+        .fab:hover { transform: scale(1.08); box-shadow: 0 6px 20px rgba(124,77,255,0.5); }
+        input, select { outline: none; }
+        .stat-card { transition: transform 0.2s; }
+        .stat-card:active { transform: scale(0.97); }
+        .plan-row { transition: background 0.15s; }
+        .plan-row:hover { background: rgba(255,255,255,0.05) !important; }
+        .subject-chip { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; }
+      `}</style>
+
+      {/* Phone shell */}
+      <div style={{
+        width: 390, minHeight: 780, maxHeight: 840, background: "#161920",
+        borderRadius: 40, overflow: "hidden", boxShadow: "0 32px 80px rgba(0,0,0,0.8), 0 0 0 1px #2a2d38",
+        display: "flex", flexDirection: "column", position: "relative",
+      }}>
+
+        {/* Status bar */}
+        <div style={{ background: "#161920", padding: "12px 24px 4px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span style={{ color: "#fff", fontSize: 12, fontWeight: 700 }}>9:41</span>
+          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+            {["▪▪▪", "📶", "🔋"].map((x, i) => (
+              <span key={i} style={{ fontSize: 11, color: "#aaa" }}>{x}</span>
+            ))}
+          </div>
+        </div>
+
+        {/* Main content */}
+        <div style={{ flex: 1, overflowY: "auto", background: "#161920" }}>
+          {tab === "home" && <HomeTab quote={quote} streak={streak} completedGoals={completedGoals} goals={goals} todayTime={todayTime} totalStudied={totalStudied} fmt={fmt} subjectColors={subjectColors} />}
+          {tab === "timer" && <TimerTab timer={timer} fmt={fmt} startTimer={startTimer} pauseTimer={pauseTimer} resetTimer={resetTimer} customTime={customTime} setCustomTime={setCustomTime} setPreset={setPreset} sessions={sessions} subjectColors={subjectColors} setTimer={setTimer} />}
+          {tab === "goals" && <GoalsTab goals={goals} toggleGoal={toggleGoal} deleteGoal={deleteGoal} showAddGoal={showAddGoal} setShowAddGoal={setShowAddGoal} newGoal={newGoal} setNewGoal={setNewGoal} newGoalSubject={newGoalSubject} setNewGoalSubject={setNewGoalSubject} addGoal={addGoal} subjectColors={subjectColors} SUBJECTS={SUBJECTS} />}
+          {tab === "plan" && <PlanTab planExpanded={planExpanded} setPlanExpanded={setPlanExpanded} />}
+          {tab === "stats" && <StatsTab sessions={sessions} fmt={fmt} subjectColors={subjectColors} goals={goals} streak={streak} />}
+        </div>
+
+        {/* Bottom nav */}
+        <div style={{
+          background: "#1E2130", borderTop: "1px solid #2a2d38",
+          display: "flex", padding: "8px 0 16px",
+        }}>
+          {[
+            { id: "home", icon: "🏠", label: "Home" },
+            { id: "timer", icon: "⏱", label: "Timer" },
+            { id: "goals", icon: "🎯", label: "Goals" },
+            { id: "plan", icon: "📚", label: "Plan" },
+            { id: "stats", icon: "📊", label: "Stats" },
+          ].map((t) => (
+            <button key={t.id} className="tab-item ripple" onClick={() => setTab(t.id)} style={{
+              flex: 1, background: "none", border: "none", cursor: "pointer",
+              display: "flex", flexDirection: "column", alignItems: "center", gap: 2,
+              padding: "6px 0",
+            }}>
+              <span style={{ fontSize: 20 }}>{t.icon}</span>
+              <span style={{
+                fontSize: 10, fontWeight: 700,
+                color: tab === t.id ? "#7C4DFF" : "#666",
+                transition: "color 0.2s",
+              }}>{t.label}</span>
+              {tab === t.id && (
+                <div style={{ width: 20, height: 3, background: "#7C4DFF", borderRadius: 2, marginTop: 2 }} />
+              )}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── HOME TAB ─── */
+function HomeTab({ quote, streak, completedGoals, goals, todayTime, totalStudied, fmt, subjectColors }) {
+  const now = new Date();
+  const hour = now.getHours();
+  const greeting = hour < 12 ? "Good Morning" : hour < 17 ? "Good Afternoon" : "Good Evening";
+
+  return (
+    <div style={{ padding: "20px 20px 24px" }}>
+      {/* Greeting */}
+      <div style={{ marginBottom: 20 }}>
+        <p style={{ color: "#7C4DFF", fontSize: 13, fontWeight: 700, letterSpacing: 1 }}>{greeting.toUpperCase()} 👋</p>
+        <h1 style={{ color: "#fff", fontSize: 26, fontWeight: 900, lineHeight: 1.2 }}>Let's Study<br />& Grow Today!</h1>
+        <p style={{ color: "#666", fontSize: 13, marginTop: 4 }}>UP Board Class 10 · Python & AI</p>
+      </div>
+
+      {/* Quote card */}
+      <div className="card" style={{
+        background: "linear-gradient(135deg, #7C4DFF 0%, #5C35CC 100%)",
+        borderRadius: 20, padding: "18px 20px", marginBottom: 20,
+        position: "relative", overflow: "hidden",
+      }}>
+        <div style={{ fontSize: 36, opacity: 0.15, position: "absolute", top: -8, right: 12, fontFamily: "Georgia" }}>"</div>
+        <p style={{ color: "#fff", fontSize: 14, fontStyle: "italic", lineHeight: 1.5, position: "relative" }}>{quote.text}</p>
+        <p style={{ color: "rgba(255,255,255,0.7)", fontSize: 11, marginTop: 8, fontWeight: 700 }}>— {quote.author}</p>
+      </div>
+
+      {/* Stats row */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 20 }}>
+        {[
+          { label: "Today", value: fmt(todayTime), icon: "⏱", color: "#4CAF50" },
+          { label: "Streak", value: `${streak}d 🔥`, icon: "🔥", color: "#FF9800" },
+          { label: "Goals", value: `${completedGoals}/${goals.length}`, icon: "🎯", color: "#7C4DFF" },
+        ].map((s) => (
+          <div key={s.label} className="stat-card card" style={{
+            background: "#1E2130", borderRadius: 16, padding: "14px 10px", textAlign: "center",
+            border: `1px solid ${s.color}22`,
+          }}>
+            <p style={{ fontSize: 18, marginBottom: 4 }}>{s.icon}</p>
+            <p style={{ color: s.color, fontSize: 16, fontWeight: 900, fontFamily: "'JetBrains Mono', monospace" }}>{s.value}</p>
+            <p style={{ color: "#555", fontSize: 10, fontWeight: 700, marginTop: 2 }}>{s.label}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Today's Goals preview */}
+      <div className="card" style={{ background: "#1E2130", borderRadius: 20, padding: "16px" }}>
+        <p style={{ color: "#fff", fontSize: 14, fontWeight: 800, marginBottom: 12 }}>📋 Today's Goals</p>
+        {goals.length === 0 && <p style={{ color: "#555", fontSize: 13 }}>No goals yet. Add some!</p>}
+        {goals.slice(0, 3).map((g) => (
+          <div key={g.id} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+            <div style={{
+              width: 18, height: 18, borderRadius: 5,
+              background: g.done ? "#7C4DFF" : "transparent",
+              border: g.done ? "none" : "2px solid #333",
+              display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+            }}>
+              {g.done && <span style={{ color: "#fff", fontSize: 10 }}>✓</span>}
+            </div>
+            <span style={{ color: g.done ? "#555" : "#ddd", fontSize: 13, textDecoration: g.done ? "line-through" : "none", flex: 1 }}>{g.text}</span>
+            <span className="subject-chip" style={{ background: (subjectColors[g.subject] || "#607D8B") + "22", color: subjectColors[g.subject] || "#607D8B" }}>{g.subject}</span>
+          </div>
+        ))}
+        {goals.length > 3 && <p style={{ color: "#7C4DFF", fontSize: 12, fontWeight: 700, marginTop: 4 }}>+{goals.length - 3} more goals →</p>}
+      </div>
+    </div>
+  );
+}
+
+/* ─── TIMER TAB ─── */
+function TimerTab({ timer, fmt, startTimer, pauseTimer, resetTimer, customTime, setCustomTime, setPreset, sessions, subjectColors, setTimer }) {
+  const maxSec = customTime * 60;
+  const progress = Math.min(timer.seconds / maxSec, 1);
+  const r = 90, circ = 2 * Math.PI * r;
+  const dash = circ * (1 - progress);
+
+  return (
+    <div style={{ padding: "20px 20px 24px" }}>
+      <h2 style={{ color: "#fff", fontSize: 22, fontWeight: 900, marginBottom: 4 }}>⏱ Study Timer</h2>
+      <p style={{ color: "#555", fontSize: 13, marginBottom: 20 }}>Focus, track, and improve.</p>
+
+      {/* Subject picker */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
+        {["Python", "AI/ML", "Maths", "Physics", "English"].map((s) => (
+          <button key={s} className="ripple" onClick={() => setTimer((t) => ({ ...t, subject: s }))} style={{
+            padding: "6px 14px", borderRadius: 20,
+            background: timer.subject === s ? (subjectColors[s] + "33") : "#1E2130",
+            color: timer.subject === s ? subjectColors[s] : "#666",
+            border: `1.5px solid ${timer.subject === s ? subjectColors[s] : "#2a2d38"}`,
+            fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'Nunito', sans-serif",
+          }}>{s}</button>
+        ))}
+      </div>
+
+      {/* Circular timer */}
+      <div style={{ display: "flex", justifyContent: "center", marginBottom: 24 }}>
+        <div style={{ position: "relative", width: 220, height: 220 }}>
+          <svg width={220} height={220} style={{ transform: "rotate(-90deg)" }}>
+            <circle cx={110} cy={110} r={r} fill="none" stroke="#1E2130" strokeWidth={12} />
+            <circle cx={110} cy={110} r={r} fill="none"
+              stroke={subjectColors[timer.subject] || "#7C4DFF"}
+              strokeWidth={12} strokeLinecap="round"
+              strokeDasharray={circ} strokeDashoffset={dash}
+              className="timer-ring"
+            />
+          </svg>
+          <div style={{
+            position: "absolute", inset: 0, display: "flex",
+            flexDirection: "column", alignItems: "center", justifyContent: "center",
+          }}>
+            <span style={{ color: "#fff", fontSize: 38, fontWeight: 900, fontFamily: "'JetBrains Mono', monospace" }}>{fmt(timer.seconds)}</span>
+            <span style={{ color: "#555", fontSize: 12, fontWeight: 700 }}>{timer.running ? "● STUDYING" : "PAUSED"}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Preset buttons */}
+      <div style={{ display: "flex", gap: 8, justifyContent: "center", marginBottom: 20 }}>
+        {[15, 25, 45, 60].map((m) => (
+          <button key={m} className="ripple" onClick={() => setPreset(m)} style={{
+            padding: "6px 14px", borderRadius: 12, fontSize: 12, fontWeight: 800,
+            background: customTime === m ? "#7C4DFF" : "#1E2130",
+            color: customTime === m ? "#fff" : "#666",
+            border: `1px solid ${customTime === m ? "#7C4DFF" : "#2a2d38"}`,
+            cursor: "pointer", fontFamily: "'Nunito', sans-serif",
+          }}>{m}m</button>
+        ))}
+        {/* Custom */}
+        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+          <input type="number" min={1} max={180} value={customTime}
+            onChange={(e) => setCustomTime(Number(e.target.value))}
+            style={{
+              width: 46, padding: "5px 6px", borderRadius: 10,
+              background: "#1E2130", color: "#fff", border: "1px solid #2a2d38",
+              fontSize: 12, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", textAlign: "center",
+            }} />
+          <span style={{ color: "#555", fontSize: 11 }}>min</span>
+        </div>
+      </div>
+
+      {/* Controls */}
+      <div style={{ display: "flex", gap: 12, justifyContent: "center", marginBottom: 24 }}>
+        <button className="ripple" onClick={resetTimer} style={{
+          width: 52, height: 52, borderRadius: "50%",
+          background: "#1E2130", border: "1px solid #333",
+          color: "#aaa", fontSize: 18, cursor: "pointer",
+        }}>↺</button>
+        <button className="ripple" onClick={timer.running ? pauseTimer : startTimer} style={{
+          width: 72, height: 72, borderRadius: "50%",
+          background: "linear-gradient(135deg, #7C4DFF, #5C35CC)",
+          border: "none", color: "#fff", fontSize: 26, cursor: "pointer",
+          boxShadow: "0 6px 20px rgba(124,77,255,0.4)",
+        }}>{timer.running ? "⏸" : "▶"}</button>
+        <button className="ripple" onClick={() => {}} style={{
+          width: 52, height: 52, borderRadius: "50%",
+          background: "#1E2130", border: "1px solid #333",
+          color: "#aaa", fontSize: 18, cursor: "pointer",
+        }}>☰</button>
+      </div>
+
+      {/* Recent sessions */}
+      {sessions.length > 0 && (
+        <div style={{ background: "#1E2130", borderRadius: 16, padding: 14 }}>
+          <p style={{ color: "#fff", fontSize: 13, fontWeight: 800, marginBottom: 10 }}>Recent Sessions</p>
+          {sessions.slice(-3).reverse().map((s, i) => (
+            <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div style={{ width: 8, height: 8, borderRadius: "50%", background: subjectColors[s.subject] || "#7C4DFF" }} />
+                <span style={{ color: "#bbb", fontSize: 13 }}>{s.subject}</span>
+              </div>
+              <span style={{ color: "#7C4DFF", fontSize: 12, fontFamily: "'JetBrains Mono', monospace", fontWeight: 700 }}>{fmt(s.seconds)}</span>
+              <span style={{ color: "#444", fontSize: 11 }}>{s.date}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── GOALS TAB ─── */
+function GoalsTab({ goals, toggleGoal, deleteGoal, showAddGoal, setShowAddGoal, newGoal, setNewGoal, newGoalSubject, setNewGoalSubject, addGoal, subjectColors, SUBJECTS }) {
+  const pending = goals.filter((g) => !g.done);
+  const done = goals.filter((g) => g.done);
+
+  return (
+    <div style={{ padding: "20px 20px 100px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+        <div>
+          <h2 style={{ color: "#fff", fontSize: 22, fontWeight: 900 }}>🎯 Goals</h2>
+          <p style={{ color: "
